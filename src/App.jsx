@@ -583,22 +583,85 @@ function App() {
 
         {user && (
           <div className="mb-6 p-4 bg-white/5 backdrop-blur-lg border border-purple-300/30 rounded-xl">
-            <div className="flex items-center gap-2 mb-3">
-              <Settings size={20} className="text-purple-300" />
-              <h3 className="text-white font-semibold">My MCP Servers</h3>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Settings size={20} className="text-purple-300" />
+                <h3 className="text-white font-semibold">My MCP Servers</h3>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* FastMCP Cloud Status */}
+                <div className={`flex items-center gap-2 px-3 py-1 rounded-lg ${
+                  cloudStatus === 'connected' ? 'bg-green-500/20 text-green-300' :
+                  cloudStatus === 'connecting' ? 'bg-yellow-500/20 text-yellow-300' :
+                  cloudStatus === 'error' ? 'bg-red-500/20 text-red-300' :
+                  'bg-gray-500/20 text-gray-300'
+                }`}>
+                  <Zap size={16} />
+                  <span className="text-sm font-medium">
+                    {cloudStatus === 'connected' ? 'Cloud Connected' :
+                     cloudStatus === 'connecting' ? 'Connecting...' :
+                     cloudStatus === 'error' ? 'Cloud Error' :
+                     'Cloud Disconnected'}
+                  </span>
+                </div>
+
+                {cloudStatus !== 'connected' && (
+                  <button
+                    onClick={connectToFastMCPCloud}
+                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm transition-all"
+                  >
+                    Connect Cloud
+                  </button>
+                )}
+
+                {cloudStatus === 'connected' && (
+                  <button
+                    onClick={syncWithCloud}
+                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-all"
+                  >
+                    Sync Cloud
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* Cloud Projects */}
+            {cloudProjects.length > 0 && (
+              <div className="mb-4 p-3 bg-slate-800/30 rounded-lg">
+                <h4 className="text-purple-200 font-medium mb-2">Cloud Projects</h4>
+                <div className="space-y-2">
+                  {cloudProjects.map(project => (
+                    <div key={project.id} className="flex items-center justify-between text-sm">
+                      <span className="text-white">{project.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          project.status === 'deployed' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'
+                        }`}>
+                          {project.status}
+                        </span>
+                        <a href={project.url} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-purple-100">
+                          🌐
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {loadingMyServers ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="animate-spin text-purple-300" size={24} />
                 <span className="ml-2 text-purple-200">Loading your servers...</span>
               </div>
-            ) : myServers.length === 0 ? (
+            ) : myServers.length === 0 && localServers.length === 0 ? (
               <p className="text-purple-200 text-sm">No MCP servers installed yet. Install some servers to see them here!</p>
             ) : (
               <div className="space-y-3">
+                {/* GitHub Fork Servers */}
                 {myServers.map(server => (
-                  <div key={server.name} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                  <div key={`github-${server.name}`} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-600/30">
                     <div className="flex items-center gap-3">
                       {server.enabled ? (
                         <CheckCircle size={16} className="text-green-400" />
@@ -606,14 +669,87 @@ function App() {
                         <XCircle size={16} className="text-red-400" />
                       )}
                       <span className="text-white font-medium">{server.name}</span>
+                      <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded-full">GitHub</span>
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         server.enabled ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
                       }`}>
                         {server.enabled ? 'Enabled' : 'Disabled'}
                       </span>
+                      {serverStatuses[server.name] && (
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          serverStatuses[server.name] === 'working' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
+                        }`}>
+                          {serverStatuses[server.name] === 'working' ? 'Working' : 'Error'}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => checkServerStatus(server)}
+                        className="p-2 bg-gray-500/20 hover:bg-gray-500/30 text-gray-300 rounded-lg transition-all"
+                        title="Check server status"
+                      >
+                        🔍
+                      </button>
+
+                      <button
+                        onClick={() => toggleServer(server.name, !server.enabled)}
+                        className={`p-2 rounded-lg transition-all ${
+                          server.enabled
+                            ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300'
+                            : 'bg-green-500/20 hover:bg-green-500/30 text-green-300'
+                        }`}
+                        title={server.enabled ? 'Disable server' : 'Enable server'}
+                      >
+                        {server.enabled ? <Pause size={16} /> : <Play size={16} />}
+                      </button>
+
+                      <button
+                        onClick={() => startEditing(server)}
+                        className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-all"
+                        title="Edit configuration"
+                      >
+                        <Edit size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Local Servers */}
+                {localServers.map(server => (
+                  <div key={`local-${server.name}`} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-green-600/30">
+                    <div className="flex items-center gap-3">
+                      {server.enabled ? (
+                        <CheckCircle size={16} className="text-green-400" />
+                      ) : (
+                        <XCircle size={16} className="text-red-400" />
+                      )}
+                      <span className="text-white font-medium">{server.name}</span>
+                      <span className="text-xs px-2 py-1 bg-green-500/20 text-green-300 rounded-full">Local</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        server.enabled ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
+                      }`}>
+                        {server.enabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                      {serverStatuses[server.name] && (
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          serverStatuses[server.name] === 'working' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
+                        }`}>
+                          {serverStatuses[server.name] === 'working' ? 'Working' : 'Error'}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => checkServerStatus(server)}
+                        className="p-2 bg-gray-500/20 hover:bg-gray-500/30 text-gray-300 rounded-lg transition-all"
+                        title="Check server status"
+                      >
+                        🔍
+                      </button>
+
                       <button
                         onClick={() => toggleServer(server.name, !server.enabled)}
                         className={`p-2 rounded-lg transition-all ${
