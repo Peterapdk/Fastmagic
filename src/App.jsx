@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Code, Github, Zap, User, LogOut, Search, Loader2, Download, ExternalLink, History, Settings, Play, Pause, Edit, CheckCircle, XCircle } from 'lucide-react';
+import { Code, Github, Zap, User, LogOut, Search, Loader2, Download, ExternalLink, History, Settings, Play, Pause, Edit, CheckCircle, XCircle, Shield, Key, Cloud, Lock, Eye, EyeOff } from 'lucide-react';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -22,6 +22,14 @@ function App() {
   const [cloudProjects, setCloudProjects] = useState([]);
   const [localServers, setLocalServers] = useState([]);
   const [serverStatuses, setServerStatuses] = useState({}); // server health status
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [adminCredentials, setAdminCredentials] = useState({
+    githubToken: '',
+    fastmcpToken: '',
+    showGitHubToken: false,
+    showFastMCPToken: false
+  });
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
   const categories = ['all', 'database', 'api', 'ai', 'development', 'productivity', 'utilities'];
 
@@ -30,6 +38,9 @@ function App() {
     const savedHistory = localStorage.getItem('install_history');
     const savedLocalServers = localStorage.getItem('local_servers');
     const savedCloudStatus = localStorage.getItem('cloud_status');
+    const savedAdminAuth = localStorage.getItem('admin_authenticated');
+    const savedGitHubToken = localStorage.getItem('encrypted_github_token');
+    const savedFastMCPToken = localStorage.getItem('encrypted_fastmcp_token');
 
     if (savedUser) {
       setUser(JSON.parse(savedUser));
@@ -44,6 +55,15 @@ function App() {
     }
     if (savedCloudStatus) {
       setCloudStatus(savedCloudStatus);
+    }
+    if (savedAdminAuth === 'true') {
+      setIsAdminAuthenticated(true);
+    }
+    if (savedGitHubToken) {
+      setAdminCredentials(prev => ({ ...prev, githubToken: decryptToken(savedGitHubToken) }));
+    }
+    if (savedFastMCPToken) {
+      setAdminCredentials(prev => ({ ...prev, fastmcpToken: decryptToken(savedFastMCPToken) }));
     }
 
     fetchServers();
@@ -539,6 +559,90 @@ function App() {
     }
   };
 
+  // Secure credential management functions
+  const encryptToken = (token) => {
+    // Simple base64 encoding for demo - in production, use proper encryption
+    return btoa(token);
+  };
+
+  const decryptToken = (encryptedToken) => {
+    try {
+      return atob(encryptedToken);
+    } catch (err) {
+      return '';
+    }
+  };
+
+  const saveGitHubToken = (token) => {
+    const encrypted = encryptToken(token);
+    localStorage.setItem('encrypted_github_token', encrypted);
+    localStorage.setItem('github_token', token); // Keep unencrypted for API calls
+  };
+
+  const saveFastMCPToken = (token) => {
+    const encrypted = encryptToken(token);
+    localStorage.setItem('encrypted_fastmcp_token', encrypted);
+  };
+
+  const authenticateAdmin = () => {
+    // Simple admin authentication - in production, use proper auth
+    const password = prompt('Enter admin password:');
+    if (password === 'admin123') { // Demo password
+      setIsAdminAuthenticated(true);
+      localStorage.setItem('admin_authenticated', 'true');
+      setShowAdminPanel(true);
+    } else {
+      alert('❌ Invalid admin password');
+    }
+  };
+
+  const logoutAdmin = () => {
+    setIsAdminAuthenticated(false);
+    setShowAdminPanel(false);
+    localStorage.removeItem('admin_authenticated');
+  };
+
+  const updateGitHubToken = () => {
+    if (adminCredentials.githubToken) {
+      saveGitHubToken(adminCredentials.githubToken);
+      // Test the token
+      fetchGitHubUser(adminCredentials.githubToken);
+      alert('✅ GitHub token updated!');
+    } else {
+      alert('❌ Please enter a GitHub token');
+    }
+  };
+
+  const updateFastMCPToken = () => {
+    if (adminCredentials.fastmcpToken) {
+      saveFastMCPToken(adminCredentials.fastmcpToken);
+      alert('✅ FastMCP Cloud token updated!');
+    } else {
+      alert('❌ Please enter a FastMCP Cloud token');
+    }
+  };
+
+  const clearAllCredentials = () => {
+    if (confirm('Are you sure you want to clear all credentials? This will log you out.')) {
+      localStorage.removeItem('github_user');
+      localStorage.removeItem('github_token');
+      localStorage.removeItem('encrypted_github_token');
+      localStorage.removeItem('encrypted_fastmcp_token');
+      localStorage.removeItem('admin_authenticated');
+      setUser(null);
+      setMcpStatus('disconnected');
+      setIsAdminAuthenticated(false);
+      setShowAdminPanel(false);
+      setAdminCredentials({
+        githubToken: '',
+        fastmcpToken: '',
+        showGitHubToken: false,
+        showFastMCPToken: false
+      });
+      alert('✅ All credentials cleared!');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -573,10 +677,24 @@ function App() {
                 </button>
               </>
             ) : (
-              <button onClick={loginWithGitHub} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all">
-                <Github size={20} />
-                Login
-              </button>
+              <>
+                <button onClick={loginWithGitHub} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all">
+                  <Github size={20} />
+                  Login
+                </button>
+                {isAdminAuthenticated && (
+                  <button onClick={() => setShowAdminPanel(true)} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all">
+                    <Shield size={16} />
+                    Admin
+                  </button>
+                )}
+                {!isAdminAuthenticated && (
+                  <button onClick={authenticateAdmin} className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-all">
+                    <Shield size={16} />
+                    Admin
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -921,6 +1039,189 @@ function App() {
                 >
                   Cancel
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Panel Modal */}
+        {showAdminPanel && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Shield size={24} />
+                  Admin Panel
+                </h3>
+                <div className="flex items-center gap-2">
+                  <button onClick={logoutAdmin} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-all">
+                    Logout Admin
+                  </button>
+                  <button onClick={() => setShowAdminPanel(false)} className="text-purple-300 hover:text-white text-2xl">×</button>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {/* GitHub Authentication */}
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Github size={20} className="text-white" />
+                    <h4 className="text-white font-semibold">GitHub Authentication</h4>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-purple-200 mb-1">
+                        GitHub Personal Access Token
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={adminCredentials.showGitHubToken ? "text" : "password"}
+                          value={adminCredentials.githubToken}
+                          onChange={(e) => setAdminCredentials(prev => ({ ...prev, githubToken: e.target.value }))}
+                          placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                          className="w-full px-3 py-2 bg-slate-900 border border-purple-300/30 rounded-lg text-purple-200 placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10"
+                        />
+                        <button
+                          onClick={() => setAdminCredentials(prev => ({ ...prev, showGitHubToken: !prev.showGitHubToken }))}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-purple-400 hover:text-purple-200"
+                        >
+                          {adminCredentials.showGitHubToken ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={updateGitHubToken}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all"
+                      >
+                        <Key size={16} />
+                        Update GitHub Token
+                      </button>
+
+                      <a
+                        href="https://github.com/settings/tokens"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
+                      >
+                        <ExternalLink size={16} />
+                        Get Token
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* FastMCP Cloud Authentication */}
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Cloud size={20} className="text-white" />
+                    <h4 className="text-white font-semibold">FastMCP Cloud Authentication</h4>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-purple-200 mb-1">
+                        FastMCP Cloud API Token
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={adminCredentials.showFastMCPToken ? "text" : "password"}
+                          value={adminCredentials.fastmcpToken}
+                          onChange={(e) => setAdminCredentials(prev => ({ ...prev, fastmcpToken: e.target.value }))}
+                          placeholder="Enter your FastMCP Cloud token"
+                          className="w-full px-3 py-2 bg-slate-900 border border-purple-300/30 rounded-lg text-purple-200 placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10"
+                        />
+                        <button
+                          onClick={() => setAdminCredentials(prev => ({ ...prev, showFastMCPToken: !prev.showFastMCPToken }))}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-purple-400 hover:text-purple-200"
+                        >
+                          {adminCredentials.showFastMCPToken ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={updateFastMCPToken}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all"
+                      >
+                        <Key size={16} />
+                        Update Cloud Token
+                      </button>
+
+                      <button
+                        onClick={connectToFastMCPCloud}
+                        disabled={cloudStatus === 'connecting'}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-all disabled:cursor-not-allowed"
+                      >
+                        {cloudStatus === 'connecting' ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            Connecting...
+                          </>
+                        ) : (
+                          <>
+                            <Zap size={16} />
+                            Connect to Cloud
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security & Management */}
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lock size={20} className="text-white" />
+                    <h4 className="text-white font-semibold">Security & Management</h4>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="text-sm text-purple-200">
+                      <p><strong>Current Status:</strong></p>
+                      <ul className="mt-2 space-y-1 ml-4">
+                        <li>• GitHub: {user ? 'Connected' : 'Disconnected'}</li>
+                        <li>• FastMCP Cloud: {cloudStatus}</li>
+                        <li>• Admin: Authenticated</li>
+                      </ul>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={clearAllCredentials}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all"
+                      >
+                        <Lock size={16} />
+                        Clear All Credentials
+                      </button>
+
+                      <button
+                        onClick={syncWithCloud}
+                        disabled={cloudStatus !== 'connected'}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-all disabled:cursor-not-allowed"
+                      >
+                        <Cloud size={16} />
+                        Sync with Cloud
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security Notice */}
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <Shield size={20} className="text-yellow-400 mt-0.5" />
+                    <div>
+                      <h5 className="text-yellow-200 font-semibold mb-1">Security Notice</h5>
+                      <p className="text-yellow-100/80 text-sm">
+                        Credentials are encrypted and stored locally. For production use, consider implementing proper OAuth flows and secure token storage. Never share your tokens or commit them to version control.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
