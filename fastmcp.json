@@ -1,0 +1,22 @@
+{
+  "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
+  "source": {
+    "path": "server.py",
+    "entrypoint": "app"
+  },
+  "environment": {
+    "dependencies": ["fastmcp", "uv"]
+  },
+  "deployment": {
+    "transport": "stdio",
+    "host": "0.0.0.0",
+    "port": 3001
+  },
+  "metadata": {
+    "name": "FastMCP Cloud Installer Server",
+    "version": "2.0.0",
+    "description": "MCP server for managing FastMCP Cloud deployments and server configurations",
+    "author": "FastMCP Team",
+    "license": "MIT"
+  }
+}
