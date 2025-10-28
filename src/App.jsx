@@ -644,7 +644,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 safe-area-top safe-area-bottom">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <div className="flex items-center gap-3">
@@ -678,20 +678,20 @@ function App() {
               </>
             ) : (
               <>
-                <button onClick={loginWithGitHub} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all">
+                <button onClick={loginWithGitHub} className="btn-mobile flex items-center gap-2 px-4 sm:px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all focus-visible">
                   <Github size={20} />
-                  Login
+                  <span className="hidden sm:inline">Login</span>
                 </button>
                 {isAdminAuthenticated && (
-                  <button onClick={() => setShowAdminPanel(true)} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all">
+                  <button onClick={() => setShowAdminPanel(true)} className="btn-mobile flex items-center gap-2 px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all focus-visible">
                     <Shield size={16} />
-                    Admin
+                    <span className="hidden sm:inline">Admin</span>
                   </button>
                 )}
                 {!isAdminAuthenticated && (
-                  <button onClick={authenticateAdmin} className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-all">
+                  <button onClick={authenticateAdmin} className="btn-mobile flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-all focus-visible">
                     <Shield size={16} />
-                    Admin
+                    <span className="hidden sm:inline">Admin</span>
                   </button>
                 )}
               </>
@@ -916,7 +916,7 @@ function App() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`btn-mobile px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-responsive focus-visible ${
                 selectedCategory === cat ? 'bg-purple-600 text-white' : 'bg-white/10 text-purple-200 hover:bg-white/20'
               }`}
             >
@@ -948,7 +948,7 @@ function App() {
             <div className="mb-4 text-purple-200">
               Found {filteredServers.length} server{filteredServers.length !== 1 ? 's' : ''}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredServers.map(server => (
                 <div key={server.id} className="bg-white/10 backdrop-blur-lg border border-purple-300/30 rounded-xl p-6 hover:bg-white/15 transition-all">
                   <div className="flex items-start justify-between mb-3">
@@ -1046,8 +1046,8 @@ function App() {
 
         {/* Admin Panel Modal */}
         {showAdminPanel && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-content">
+            <div className="bg-slate-800 rounded-xl p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
                   <Shield size={24} />
