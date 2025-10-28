@@ -8,32 +8,45 @@ from fastmcp import FastMCP
 import os
 import json
 import subprocess
+import sys
 from typing import Dict, List, Optional
 import asyncio
+import importlib.util
+import tempfile
+import shutil
 
-# Initialize FastMCP server with built-in authentication
+# Initialize FastMCP server with composition support
 app = FastMCP(
     name="FastMCP Cloud Installer",
     instructions="""
-    FastMCP Cloud Installer Server - Secure MCP server management with built-in authentication.
+    FastMCP Cloud Installer Server - Complete MCP ecosystem management with real server installation.
 
     This server provides authenticated tools for:
-    - Installing MCP servers from GitHub repositories
+    - Installing real MCP servers from GitHub repositories (@modelcontextprotocol servers)
     - Managing server configurations and deployments
     - Deploying projects to FastMCP Cloud
     - Monitoring server health and status
+    - Dynamic tool exposure from installed servers
     - User authentication and authorization
+
+    When you install MCP servers, their actual tools become available:
+    - GitHub operations (get_user_repos, create_issue, search_repositories)
+    - File system access (read_file, list_directory, search_files)
+    - Git operations (get_status, commit_changes, create_branch)
+    - Database queries (SQLite, PostgreSQL)
+    - Web search and API integrations
 
     Authentication is handled automatically via FastMCP's built-in OAuth2 provider,
     ensuring seamless integration with Claude.ai and Claude Code.
 
-    Use the available tools to securely manage your MCP server ecosystem.
+    Use the available tools to securely manage your complete MCP server ecosystem.
     """
 )
 
-# In-memory storage for server configurations
+# In-memory storage for server configurations and mounted servers
 server_configs: Dict[str, Dict] = {}
 cloud_projects: Dict[str, Dict] = {}
+mounted_servers: Dict[str, FastMCP] = {}  # Track mounted server instances
 
 @app.tool()
 async def install_server_from_github(repo_url: str, server_name: str) -> str:
