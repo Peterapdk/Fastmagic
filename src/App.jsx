@@ -22,6 +22,9 @@ function App() {
   const [cloudProjects, setCloudProjects] = useState([]);
   const [localServers, setLocalServers] = useState([]);
   const [serverStatuses, setServerStatuses] = useState({}); // server health status
+  const [cloudServerUrl, setCloudServerUrl] = useState('https://Fastmagic.fastmcp.app/mcp');
+  const [cloudServerConnected, setCloudServerConnected] = useState(false);
+  const [cloudServerStatus, setCloudServerStatus] = useState('disconnected'); // disconnected, connecting, connected, error
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [adminCredentials, setAdminCredentials] = useState({
     githubToken: '',
@@ -41,6 +44,8 @@ function App() {
     const savedAdminAuth = localStorage.getItem('admin_authenticated');
     const savedGitHubToken = localStorage.getItem('encrypted_github_token');
     const savedFastMCPToken = localStorage.getItem('encrypted_fastmcp_token');
+    const savedCloudServerUrl = localStorage.getItem('cloud_server_url');
+    const savedCloudServerStatus = localStorage.getItem('cloud_server_status');
 
     if (savedUser) {
       setUser(JSON.parse(savedUser));
@@ -64,6 +69,13 @@ function App() {
     }
     if (savedFastMCPToken) {
       setAdminCredentials(prev => ({ ...prev, fastmcpToken: decryptToken(savedFastMCPToken) }));
+    }
+    if (savedCloudServerUrl) {
+      setCloudServerUrl(savedCloudServerUrl);
+    }
+    if (savedCloudServerStatus) {
+      setCloudServerStatus(savedCloudServerStatus);
+      setCloudServerConnected(savedCloudServerStatus === 'connected');
     }
 
     fetchServers();
@@ -629,10 +641,14 @@ function App() {
       localStorage.removeItem('encrypted_github_token');
       localStorage.removeItem('encrypted_fastmcp_token');
       localStorage.removeItem('admin_authenticated');
+      localStorage.removeItem('cloud_server_url');
+      localStorage.removeItem('cloud_server_status');
       setUser(null);
       setMcpStatus('disconnected');
       setIsAdminAuthenticated(false);
       setShowAdminPanel(false);
+      setCloudServerConnected(false);
+      setCloudServerStatus('disconnected');
       setAdminCredentials({
         githubToken: '',
         fastmcpToken: '',
@@ -640,6 +656,99 @@ function App() {
         showFastMCPToken: false
       });
       alert('✅ All credentials cleared!');
+    }
+  };
+
+  // Cloud MCP Server Connection Functions
+  const connectToCloudServer = async () => {
+    if (!cloudServerUrl.trim()) {
+      alert('❌ Please enter a valid cloud server URL');
+      return;
+    }
+
+    setCloudServerStatus('connecting');
+
+    try {
+      // Test connection to the cloud MCP server
+      const response = await fetch(cloudServerUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: {
+              name: 'FastMCP Cloud Installer',
+              version: '2.0.0'
+            }
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.result) {
+          setCloudServerConnected(true);
+          setCloudServerStatus('connected');
+          localStorage.setItem('cloud_server_url', cloudServerUrl);
+          localStorage.setItem('cloud_server_status', 'connected');
+          alert('✅ Successfully connected to FastMCP Cloud server!');
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Cloud server connection error:', error);
+      setCloudServerStatus('error');
+      setCloudServerConnected(false);
+      localStorage.setItem('cloud_server_status', 'error');
+      alert(`❌ Failed to connect to cloud server: ${error.message}`);
+    }
+  };
+
+  const disconnectFromCloudServer = () => {
+    setCloudServerConnected(false);
+    setCloudServerStatus('disconnected');
+    localStorage.setItem('cloud_server_status', 'disconnected');
+    alert('✅ Disconnected from FastMCP Cloud server');
+  };
+
+  const testCloudServerTools = async () => {
+    if (!cloudServerConnected) {
+      alert('❌ Not connected to cloud server');
+      return;
+    }
+
+    try {
+      const response = await fetch(cloudServerUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/list',
+          params: {}
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const toolCount = data.result?.tools?.length || 0;
+        alert(`✅ Cloud server is responding! Available tools: ${toolCount}`);
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (error) {
+      alert(`❌ Error testing cloud server: ${error.message}`);
     }
   };
 
@@ -1172,6 +1281,85 @@ function App() {
                   </div>
                 </div>
 
+                {/* Cloud MCP Server Connection */}
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Zap size={20} className="text-white" />
+                    <h4 className="text-white font-semibold">Cloud MCP Server Connection</h4>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-purple-200 mb-1">
+                        FastMCP Cloud Server URL
+                      </label>
+                      <input
+                        type="url"
+                        value={cloudServerUrl}
+                        onChange={(e) => setCloudServerUrl(e.target.value)}
+                        placeholder="https://your-project.fastmcp.app/mcp"
+                        className="w-full px-3 py-2 bg-slate-900 border border-purple-300/30 rounded-lg text-purple-200 placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                      <p className="text-xs text-purple-300/70 mt-1">
+                        Your deployed FastMCP Cloud server endpoint
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className={`w-2 h-2 rounded-full ${
+                        cloudServerStatus === 'connected' ? 'bg-green-400' :
+                        cloudServerStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' :
+                        cloudServerStatus === 'error' ? 'bg-red-400' : 'bg-gray-400'
+                      }`}></div>
+                      <span className="text-purple-200 capitalize">
+                        {cloudServerStatus === 'connected' ? 'Connected' :
+                         cloudServerStatus === 'connecting' ? 'Connecting...' :
+                         cloudServerStatus === 'error' ? 'Connection Error' : 'Disconnected'}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-3">
+                      {!cloudServerConnected ? (
+                        <button
+                          onClick={connectToCloudServer}
+                          disabled={cloudServerStatus === 'connecting'}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-all disabled:cursor-not-allowed"
+                        >
+                          {cloudServerStatus === 'connecting' ? (
+                            <>
+                              <Loader2 size={16} className="animate-spin" />
+                              Connecting...
+                            </>
+                          ) : (
+                            <>
+                              <Zap size={16} />
+                              Connect to Server
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={disconnectFromCloudServer}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all"
+                          >
+                            <XCircle size={16} />
+                            Disconnect
+                          </button>
+
+                          <button
+                            onClick={testCloudServerTools}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all"
+                          >
+                            <CheckCircle size={16} />
+                            Test Tools
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Security & Management */}
                 <div className="bg-slate-700/50 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -1185,6 +1373,7 @@ function App() {
                       <ul className="mt-2 space-y-1 ml-4">
                         <li>• GitHub: {user ? 'Connected' : 'Disconnected'}</li>
                         <li>• FastMCP Cloud: {cloudStatus}</li>
+                        <li>• Cloud MCP Server: {cloudServerStatus === 'connected' ? 'Connected' : cloudServerStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}</li>
                         <li>• Admin: Authenticated</li>
                       </ul>
                     </div>
