@@ -11,19 +11,23 @@ import subprocess
 from typing import Dict, List, Optional
 import asyncio
 
-# Initialize FastMCP server
+# Initialize FastMCP server with built-in authentication
 app = FastMCP(
     name="FastMCP Cloud Installer",
     instructions="""
-    FastMCP Cloud Installer Server - Manage MCP server deployments and configurations.
+    FastMCP Cloud Installer Server - Secure MCP server management with built-in authentication.
 
-    This server provides tools for:
-    - Installing MCP servers from GitHub
-    - Managing server configurations
-    - Deploying to FastMCP Cloud
+    This server provides authenticated tools for:
+    - Installing MCP servers from GitHub repositories
+    - Managing server configurations and deployments
+    - Deploying projects to FastMCP Cloud
     - Monitoring server health and status
+    - User authentication and authorization
 
-    Use the available tools to manage your MCP server ecosystem.
+    Authentication is handled automatically via FastMCP's built-in OAuth2 provider,
+    ensuring seamless integration with Claude.ai and Claude Code.
+
+    Use the available tools to securely manage your MCP server ecosystem.
     """
 )
 

@@ -7,6 +7,11 @@
   "environment": {
     "dependencies": ["fastmcp", "uv"]
   },
+  "auth": {
+    "provider": "fastmcp",
+    "enabled": true,
+    "description": "Built-in OAuth2 identity provider for seamless Claude.ai & Claude Code integration"
+  },
   "deployment": {
     "transport": "stdio",
     "host": "0.0.0.0",
@@ -15,8 +20,15 @@
   "metadata": {
     "name": "FastMCP Cloud Installer Server",
     "version": "2.0.0",
-    "description": "MCP server for managing FastMCP Cloud deployments and server configurations",
+    "description": "MCP server for managing FastMCP Cloud deployments and server configurations with built-in authentication",
     "author": "FastMCP Team",
-    "license": "MIT"
+    "license": "MIT",
+    "features": [
+      "GitHub server installation",
+      "FastMCP Cloud deployment",
+      "Server health monitoring",
+      "Configuration management",
+      "OAuth2 authentication"
+    ]
   }
 }
