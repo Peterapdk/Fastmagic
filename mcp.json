@@ -18,6 +18,15 @@
       "env": {},
       "disabled": false,
       "alwaysAllow": []
+    },
+    "inspector": {
+      "command": "node",
+      "args": [
+        "node_modules/inspector/dist/index.js"
+      ],
+      "env": {},
+      "disabled": false,
+      "alwaysAllow": []
     }
   }
 }
