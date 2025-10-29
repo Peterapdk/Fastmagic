@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "awesome-mcp-servers": {
+      "command": "python",
+      "args": [
+        "-m",
+        "awesome-mcp-servers"
+      ],
+      "env": {},
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}
