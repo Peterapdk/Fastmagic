@@ -27,6 +27,15 @@
       "env": {},
       "disabled": false,
       "alwaysAllow": []
+    },
+    "playwright-mcp": {
+      "command": "node",
+      "args": [
+        "node_modules/playwright-mcp/dist/index.js"
+      ],
+      "env": {},
+      "disabled": false,
+      "alwaysAllow": []
     }
   }
 }
