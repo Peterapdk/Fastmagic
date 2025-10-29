@@ -9,6 +9,15 @@
       "env": {},
       "disabled": false,
       "alwaysAllow": []
+    },
+    "context7": {
+      "command": "node",
+      "args": [
+        "node_modules/context7/dist/index.js"
+      ],
+      "env": {},
+      "disabled": false,
+      "alwaysAllow": []
     }
   }
 }
